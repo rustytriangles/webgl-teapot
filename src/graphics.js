@@ -46,8 +46,13 @@ function initShaders(gl) {
           'uniform mat4 uProjectionMatrix;' +
           'uniform mat4 uModelViewMatrix;' +
           'void main() {' +
+	  '    float ka = 0.1;' +
+	  '    float kd = 0.8;' +
           '    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;' +
-	  '    vLightColor = vec3(1.0 + 2.0*aVertexNormal.x, 1.0 + 2.0*aVertexNormal.y, 1.0 + 2.0*aVertexNormal.z);' +
+	  '    vec3 lightVec = vec3(0,0,1);' +
+	  '    vec3 matColor = vec3(0.5, 0.25, 1);' +
+	  '    float d = dot(aVertexNormal, lightVec);' +
+	  '    vLightColor = min(vec3(ka) + vec3(kd)*max(vec3(d),vec3(0)), vec3(1)) * matColor;' +
           '}';
 
     const fsSource =
@@ -211,9 +216,6 @@ function draw(gl) {
                            offset);
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
 
-// this one shouldn't matter
-//    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, geomBuffers.indicesBuffer);
-
     gl.useProgram(programInfo.program);
 
     gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix,
@@ -226,7 +228,7 @@ function draw(gl) {
     const numTriangles = geomInfo.numTriangles;
     gl.drawElements(gl.TRIANGLES, 3*numTriangles, geomBuffers.indicesType, 0);
 
-//    checkErrors(gl, 'after drawElements');
+    checkErrors(gl, 'after drawElements');
 }
 
 module.exports = { draw };

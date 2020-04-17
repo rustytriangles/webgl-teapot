@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         const rect = canvas.getBoundingClientRect();
-        const gl = canvas.getContext('webgl');
+        const gl = canvas.getContext('webgl2');
 	if (!gl) {
 	    console.log('Could not create context');
 	    return;
