@@ -1,0 +1,21 @@
+{
+  "name": "webglteapot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "nyc mocha",
+    "clean": "rm -rf node_modules"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chai": "^4.2.0",
+    "electron": "^8.2.2",
+    "gl-matrix": "^3.3.0",
+    "istanbul": "^0.4.5",
+    "mocha": "^7.1.1",
+    "nyc": "^15.0.1"
+  }
+}
