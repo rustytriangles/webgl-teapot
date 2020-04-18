@@ -143,3 +143,27 @@ describe('getGeometry', function () {
 	assert.equal(p.indices.length, 3*expectedNumTriangles);
     });
 });
+
+describe('normals', function () {
+
+    const nr = 20;
+    const nc = 20;
+
+    it('check shape', function() {
+	const p = teapot.getGeometry();
+
+	const cpts = teapot.getControlPoints();
+        const result = teapot.evaluatePatch(cpts[28], nr, nc);
+	const normals = result.normals;
+
+	let minY = 10;
+	let maxY = -10;
+	for (let i = 0; i < normals.length; i += 3) {
+	    minY = Math.min(minY, normals[i+1]);
+	    maxY = Math.max(maxY, normals[i+1]);
+	}
+	assert.closeTo(minY, -1, 1.0e-6);
+	assert.closeTo(maxY, 0, 1.0e-6);
+    });
+});
+
