@@ -1,6 +1,6 @@
 // webglteapot © 2020 RustyTriangles LLC
 
-const { mat4, quat } = require('gl-matrix');
+const { mat3, mat4, quat, vec3 } = require('gl-matrix');
 const teapot = require('./teapot');
 
 var shaderProgram = undefined;
@@ -42,23 +42,34 @@ function initShaders(gl) {
     const vsSource =
 	  'attribute vec4 aVertexPosition;' +
 	  'attribute vec3 aVertexNormal;' +
-	  'varying highp vec3 vLightColor;' +
+	  'varying highp vec3 vDiffColor;' +
+	  'varying highp vec3 vSpecColor;' +
           'uniform mat4 uProjectionMatrix;' +
           'uniform mat4 uModelViewMatrix;' +
+          'uniform mat3 uNormalMatrix;' +
+	  'uniform vec3 uLightVec;' +
           'void main() {' +
-	  '    float ka = 0.1;' +
+	  '    float ka = 0.15;' +
 	  '    float kd = 0.8;' +
-          '    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;' +
-	  '    vec3 lightVec = vec3(0,0,1);' +
+	  '    float ks = 0.75;' +
+	  '    float specExp = 12.;' +
 	  '    vec3 matColor = vec3(0.5, 0.25, 1);' +
-	  '    float d = dot(aVertexNormal, lightVec);' +
-	  '    vLightColor = min(vec3(ka) + vec3(kd)*max(vec3(d),vec3(0)), vec3(1)) * matColor;' +
+          '    gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;' +
+	  '    vec3 lightColor = vec3(1); ' +
+	  '    vec3 eyeVec = normalize(uNormalMatrix * vec3(0,0,1));' +
+	  '    float d = dot(aVertexNormal, uLightVec);' +
+	  '    vDiffColor = min(vec3(ka) + vec3(kd)*max(vec3(d),vec3(0)), vec3(1)) * matColor;' +
+	  '    vec3 halfVec = normalize(uLightVec - eyeVec);' +
+	  '    float sd = dot(halfVec, aVertexNormal);' +
+	  '    float p = ks * pow(max(sd,0.0),specExp);' +
+	  '    vSpecColor = p * lightColor;' +
           '}';
 
     const fsSource =
-	  'varying highp vec3 vLightColor;' +
+	  'varying highp vec3 vDiffColor;' +
+	  'varying highp vec3 vSpecColor;' +
 	  'void main() {' +
-          '    gl_FragColor = vec4(vLightColor.x, vLightColor.y, vLightColor.z, 1.0);' +
+	  '    gl_FragColor = vec4(min(vDiffColor+vSpecColor, vec3(1.0)), 1.0);' +
           '}';
     const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
@@ -113,7 +124,6 @@ function loadShader(gl, type, source) {
     const shader = gl.createShader(type);
 
     gl.shaderSource(shader, source);
-
     gl.compileShader(shader);
 
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
@@ -126,7 +136,11 @@ function loadShader(gl, type, source) {
     return shader;
 }
 
-function draw(gl) {
+function draw(gl, frameNumber) {
+
+    const ang1 = frameNumber * Math.PI / 49;
+    const ang2 = -frameNumber * Math.PI / 63;
+    const ang3 = -frameNumber * Math.PI / 105;
 
     if (!shaderProgram) {
         shaderProgram = initShaders(gl);
@@ -142,23 +156,18 @@ function draw(gl) {
             uniformLocations: {
                 projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
                 modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+                normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
+                lightDirection: gl.getUniformLocation(shaderProgram, 'uLightVec'),
             },
         };
 
-        if (programInfo.attribLocations.vertexPosition < 0) {
-	    alert('Could not find vertexPosition location');
+	if (programInfo.uniformLocations.normalMatrix < 0) {
+	    alert('Could not find normalMatrix location');
 	    checkErrors(gl);
 	}
-        if (programInfo.attribLocations.vertexNormal < 0) {
-	    alert('Could not find vertexNormal location');
-	    checkErrors(gl);
-	}
-	if (programInfo.uniformLocations.projectionMatrix < 0) {
-	    alert('Could not find projectionMatrix location');
-	    checkErrors(gl);
-	}
-	if (programInfo.uniformLocations.projectionMatrix < 0) {
-	    alert('Could not find modelViewMatrix location');
+
+	if (programInfo.uniformLocations.lightDirection < 0) {
+	    alert('Could not find lightDirection location');
 	    checkErrors(gl);
 	}
     }
@@ -171,7 +180,7 @@ function draw(gl) {
         geomBuffers = initBuffers(gl);
     }
 
-    gl.clearColor(0,0,0,1);
+    gl.clearColor(0.25,0.25,0.25,1);
     gl.clearDepth(1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -191,8 +200,17 @@ function draw(gl) {
 
     const modelViewMatrix = mat4.create();
     mat4.translate(modelViewMatrix, modelViewMatrix, [-0.0, -1.0, -9.0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, 4*Math.PI/3, [0.0, 1.0, 0.0]);
-    mat4.rotate(modelViewMatrix, modelViewMatrix, -2*Math.PI/3, [1.0, 0.0, 0.0]);
+    mat4.rotate(modelViewMatrix, modelViewMatrix, ang1, [0.0, 1.0, 0.0]);
+    mat4.rotate(modelViewMatrix, modelViewMatrix, ang2, [1.0, 0.0, 0.0]);
+
+    let q = quat.create();
+    quat.setAxisAngle(q, [0.866*0.7071, 0.7071, 0.5*0.7071], ang3);
+    let lightDir = vec3.fromValues(-1,0,0);
+    vec3.transformQuat(lightDir, lightDir, q);
+
+    const normalMatrix = mat3.create();
+    mat3.fromMat4(normalMatrix, modelViewMatrix);
+    mat3.invert(normalMatrix, normalMatrix);
 
     const normalize = false;
     const stride = 0;
@@ -224,7 +242,11 @@ function draw(gl) {
     gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix,
                         false,
                         modelViewMatrix);
-
+    gl.uniformMatrix3fv(programInfo.uniformLocations.normalMatrix,
+                        false,
+                        normalMatrix);
+    gl.uniform3fv(programInfo.uniformLocations.lightDirection,
+                     lightDir);
     const numTriangles = geomInfo.numTriangles;
     gl.drawElements(gl.TRIANGLES, 3*numTriangles, geomBuffers.indicesType, 0);
 

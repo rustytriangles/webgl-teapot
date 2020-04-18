@@ -7,6 +7,7 @@ window.addEventListener('DOMContentLoaded', () => {
     var canvas = document.getElementById('canvas');
     var savedWidth = -1;
     var savedHeight = -1;
+    var frameCounter = 0;
     function renderLoop() {
         if (canvas.clientWidth !== savedWidth || canvas.clientHeight != savedHeight) {
             savedWidth = canvas.clientWidth;
@@ -22,7 +23,8 @@ window.addEventListener('DOMContentLoaded', () => {
 	    return;
 	}
 
-	gmod.draw(gl);
+	gmod.draw(gl, frameCounter);
+	frameCounter++;
 
         window.requestAnimationFrame(renderLoop);
     }

@@ -1,5 +1,7 @@
 This is a simple example of using [WebGL](https://www.khronos.org/webgl/) to draw Gouraud shaded triangles.
 
+![screenshot](images/screenshot.png)
+
 WebGL-Teapot demo © 2020 RustyTriangles LLC
 
 ## Building
@@ -12,6 +14,7 @@ Do `npm test` to run the unittests.
 ### Modules used
 
 * [electron](https://www.electronjs.org/) Electron framework
+* [gl-matrix](http://glmatrix.net/) Handy utilities for matrix & vector
 * [scss](https://sass-lang.com/) CSS preprocessor
 * [mocha](https://mochajs.org/) Unittest framework
 * [chai](https://www.chaijs.com/) Helpful asserts for Mocha

@@ -915,7 +915,7 @@ function evaluatePatch(cpts, nr, nc) {
 	    vec3.normalize(t2, t2);
 
 	    let n = vec3.create();
-	    vec3.cross(n, t1, t2);
+	    vec3.cross(n, t2, t1);
 	    vec3.normalize(n, n);
 	    normals.set(n, (r*nc+c) * 3);
         }
@@ -976,4 +976,4 @@ function getGeometry(gl) {
     };
 }
 
-module.exports = { getGeometry, getControlPoints, generateTeapot };
+module.exports = { getGeometry, getControlPoints, generateTeapot, evaluatePatch };
